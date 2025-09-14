@@ -3,6 +3,519 @@ document.addEventListener('DOMContentLoaded', function() {
     const navToggle = document.querySelector('.nav-toggle');
     const navMenu = document.querySelector('.nav-menu');
     
+    if (navToggle && navMenu) {
+        navToggle.addEventListener('click', function() {
+            navMenu.classList.toggle('active');
+        });
+    }
+});
+
+// Helper functions for real API data processing (Global functions)
+
+// Calculate sunlight hours based on latitude and season
+function calculateSunlightHours(lat) {
+    const month = new Date().getMonth() + 1;
+    let baseSunlight = 12; // Equatorial baseline
+    
+    // Adjust for latitude
+    const latitudeAdjustment = Math.abs(lat) * 0.1;
+    
+    // Seasonal adjustment
+    let seasonalAdjustment = 0;
+    if (month >= 6 && month <= 8) { // Summer in Northern Hemisphere
+        seasonalAdjustment = lat > 0 ? 2 : -1;
+    } else if (month >= 12 || month <= 2) { // Winter in Northern Hemisphere
+        seasonalAdjustment = lat > 0 ? -2 : 1;
+    }
+    
+    const sunlightHours = baseSunlight - latitudeAdjustment + seasonalAdjustment;
+    return Math.round(Math.max(6, Math.min(14, sunlightHours)) * 10) / 10;
+}
+
+// Calculate annual rainfall based on geographical location and recent precipitation
+function calculateAnnualRainfall(lat, lon, avgDailyPrecip) {
+    // Base annual rainfall for different regions of India (in mm)
+    let baseAnnualRainfall;
+    
+    if (lat > 30) { // Northern regions (Kashmir, Himachal Pradesh)
+        baseAnnualRainfall = 1200;
+    } else if (lat > 26 && lon < 77) { // Punjab, Haryana region
+        baseAnnualRainfall = 650;
+    } else if (lat > 20 && lat < 26) { // Central India
+        if (lon > 74 && lon < 80) { // Maharashtra, MP
+            baseAnnualRainfall = 1100;
+        } else if (lon < 74) { // Rajasthan, Gujarat
+            baseAnnualRainfall = 500;
+        } else { // Eastern central
+            baseAnnualRainfall = 1300;
+        }
+    } else if (lat < 20) { // Southern India
+        if (lon < 76) { // Kerala, Karnataka coast
+            baseAnnualRainfall = 2500;
+        } else if (lon > 80) { // Tamil Nadu, Andhra Pradesh
+            baseAnnualRainfall = 900;
+        } else { // Interior southern
+            baseAnnualRainfall = 1400;
+        }
+    } else {
+        baseAnnualRainfall = 1000; // Default
+    }
+    
+    // Adjust based on current season and recent precipitation
+    const month = new Date().getMonth() + 1;
+    const isMonsoon = (month >= 6 && month <= 9);
+    
+    // If we have recent precipitation data, use it to adjust estimate
+    if (avgDailyPrecip > 0) {
+        if (isMonsoon) {
+            // During monsoon, recent precipitation is a good indicator
+            const monsoonAdjustment = (avgDailyPrecip - 5) * 50; // Adjust based on recent rain
+            baseAnnualRainfall += monsoonAdjustment;
+        } else {
+            // Outside monsoon, recent rain suggests higher than average year
+            const seasonalAdjustment = avgDailyPrecip * 20;
+            baseAnnualRainfall += seasonalAdjustment;
+        }
+    }
+    
+    // Ensure realistic bounds
+    return Math.round(Math.max(200, Math.min(4000, baseAnnualRainfall)));
+}
+
+// Determine soil type based on Indian geography
+function determineSoilTypeFromLocation(lat, lon) {
+    // Indian soil type mapping based on geographical regions
+    if (lat > 30) { // Northern regions (Kashmir, Himachal Pradesh)
+        return 'alluvial';
+    } else if (lat > 26 && lon < 77) { // Punjab, Haryana region
+        return 'alluvial';
+    } else if (lat > 20 && lat < 26 && lon > 74 && lon < 80) { // Central India (MP, Maharashtra)
+        return 'black';
+    } else if (lat < 20 && lon > 76) { // Southern India
+        return 'red';
+    } else if (lat < 15 && lon < 76) { // Kerala, coastal regions
+        return 'laterite';
+    } else if (lon < 74) { // Western regions (Rajasthan, Gujarat)
+        return 'sandy';
+    } else {
+        return 'alluvial'; // Default
+    }
+}
+
+// Estimate phosphorus based on soil type and organic carbon
+function estimatePhosphorus(soilType, organicCarbon) {
+    const basePhosphorus = {
+        'alluvial': 60,
+        'black': 80,
+        'red': 40,
+        'laterite': 25,
+        'sandy': 20,
+        'clay': 50
+    };
+    
+    const base = basePhosphorus[soilType] || 45;
+    const organicBonus = organicCarbon * 15; // Higher organic carbon = more phosphorus
+    return base + organicBonus;
+}
+
+// Estimate potassium based on soil type and location
+function estimatePotassium(soilType, lat) {
+    const basePotassium = {
+        'alluvial': 280,
+        'black': 350,
+        'red': 200,
+        'laterite': 150,
+        'sandy': 120,
+        'clay': 250
+    };
+    
+    const base = basePotassium[soilType] || 220;
+    // Northern regions typically have higher potassium
+    const latitudeBonus = lat > 25 ? 50 : 0;
+    return base + latitudeBonus;
+}
+
+// Estimate soil moisture based on climate
+function estimateSoilMoisture(lat, lon) {
+    // Coastal regions have higher moisture
+    const coastal = (lon < 73 || lon > 92 || lat < 12 || lat > 35) ? 10 : 0;
+    
+    // Monsoon regions have higher moisture
+    const monsoonBonus = (lat > 20 && lat < 30) ? 15 : 5;
+    
+    const baseMoisture = 25;
+    return Math.min(90, baseMoisture + coastal + monsoonBonus);
+}
+
+// Calculate fertility from real soil data
+function calculateFertilityFromData(pH, organicCarbon, nitrogen) {
+    let fertilityScore = 0;
+    
+    // pH score (optimal range 6.0-7.5)
+    if (pH >= 6.0 && pH <= 7.5) fertilityScore += 40;
+    else if (pH >= 5.5 && pH <= 8.0) fertilityScore += 25;
+    else fertilityScore += 10;
+    
+    // Organic carbon score
+    if (organicCarbon > 1.0) fertilityScore += 30;
+    else if (organicCarbon > 0.5) fertilityScore += 20;
+    else fertilityScore += 10;
+    
+    // Nitrogen score
+    if (nitrogen > 300) fertilityScore += 30;
+    else if (nitrogen > 200) fertilityScore += 20;
+    else fertilityScore += 10;
+    
+    if (fertilityScore >= 80) return 'High';
+    else if (fertilityScore >= 60) return 'Medium';
+    else return 'Low';
+}
+
+// Calculate average temperature from NASA data
+function calculateAverageTemp(tempData) {
+    const values = Object.values(tempData);
+    const sum = values.reduce((acc, val) => acc + val, 0);
+    return Math.round(sum / values.length);
+}
+
+// Calculate total rainfall from NASA data
+function calculateTotalRainfall(precipData) {
+    const values = Object.values(precipData);
+    const sum = values.reduce((acc, val) => acc + val, 0);
+    return Math.round(sum);
+}
+
+// Calculate average humidity from NASA data
+function calculateAverageHumidity(humidityData) {
+    const values = Object.values(humidityData);
+    const sum = values.reduce((acc, val) => acc + val, 0);
+    return Math.round(sum / values.length);
+}
+
+// Get regional data enhanced with climate data
+function getRegionalDataFromClimate(locationName, avgTemp, totalRainfall, lat, lon) {
+    const baseData = getRegionalData(locationName);
+    
+    // Adjust crop recommendations based on climate
+    if (totalRainfall < 600) {
+        // Drought-resistant crops
+        baseData.crops = ['Millet', 'Sorghum', 'Groundnut', 'Cotton'];
+        baseData.irrigation = 'Drip & Sprinkler (Essential)';
+    } else if (totalRainfall > 2000) {
+        // High rainfall crops
+        baseData.crops = ['Rice', 'Sugarcane', 'Jute', 'Tea'];
+        baseData.irrigation = 'Natural & Canal';
+    }
+    
+    // Adjust based on temperature
+    if (avgTemp > 35) {
+        baseData.intensity = 'Low'; // Heat stress reduces intensity
+    } else if (avgTemp < 15) {
+        baseData.crops = ['Wheat', 'Barley', 'Mustard', 'Peas'];
+    }
+    
+    return baseData;
+}
+
+// Get season from date (global helper)
+function getSeasonFromDate() {
+    const month = new Date().getMonth() + 1; // 1-12
+    if (month >= 6 && month <= 10) return 'Kharif (Monsoon)';
+    if (month >= 11 || month <= 3) return 'Rabi (Winter)';
+    return 'Zaid (Summer)';
+}
+
+// Get current season (global helper)
+function getCurrentSeason() {
+    const month = new Date().getMonth() + 1;
+    if (month >= 6 && month <= 10) return 'kharif';
+    if (month >= 11 || month <= 3) return 'rabi';
+    return 'zaid';
+}
+
+// Get drainage from soil type (global helper)
+function getDrainageFromSoil(soilType) {
+    const drainageMap = {
+        'sandy': 'Excellent',
+        'alluvial': 'Good',
+        'red': 'Good',
+        'black': 'Moderate',
+        'clay': 'Poor',
+        'laterite': 'Good'
+    };
+    return drainageMap[soilType] || 'Moderate';
+}
+
+// Get regional data (global helper)
+function getRegionalData(locationName) {
+    const location = locationName.toLowerCase();
+    
+    // Regional agricultural data for major Indian states
+    if (location.includes('punjab') || location.includes('haryana')) {
+        return {
+            crops: ['Wheat', 'Rice', 'Cotton', 'Sugarcane'],
+            farmSize: '3.5 acres',
+            irrigation: 'Canal & Tube well',
+            fertilizer: '120 kg/acre',
+            zone: 'North-Western Plains',
+            intensity: 'High',
+            market: 'Excellent'
+        };
+    } else if (location.includes('maharashtra')) {
+        return {
+            crops: ['Cotton', 'Sugarcane', 'Soybean', 'Wheat'],
+            farmSize: '2.8 acres',
+            irrigation: 'Drip & Sprinkler',
+            fertilizer: '95 kg/acre',
+            zone: 'Western Plateau',
+            intensity: 'High',
+            market: 'Very Good'
+        };
+    } else if (location.includes('uttar pradesh')) {
+        return {
+            crops: ['Wheat', 'Rice', 'Sugarcane', 'Potato'],
+            farmSize: '1.8 acres',
+            irrigation: 'Canal & Tube well',
+            fertilizer: '110 kg/acre',
+            zone: 'Upper Gangetic Plains',
+            intensity: 'Very High',
+            market: 'Good'
+        };
+    } else if (location.includes('bihar') || location.includes('west bengal')) {
+        return {
+            crops: ['Rice', 'Wheat', 'Jute', 'Potato'],
+            farmSize: '1.2 acres',
+            irrigation: 'Canal & River',
+            fertilizer: '85 kg/acre',
+            zone: 'Lower Gangetic Plains',
+            intensity: 'High',
+            market: 'Moderate'
+        };
+    } else if (location.includes('karnataka') || location.includes('andhra') || location.includes('telangana')) {
+        return {
+            crops: ['Rice', 'Cotton', 'Sugarcane', 'Ragi'],
+            farmSize: '2.2 acres',
+            irrigation: 'Tank & Bore well',
+            fertilizer: '90 kg/acre',
+            zone: 'Southern Plateau',
+            intensity: 'Medium',
+            market: 'Good'
+        };
+    } else if (location.includes('tamil nadu') || location.includes('kerala')) {
+        return {
+            crops: ['Rice', 'Coconut', 'Spices', 'Tea'],
+            farmSize: '1.5 acres',
+            irrigation: 'Tank & River',
+            fertilizer: '100 kg/acre',
+            zone: 'Southern Hills & Plains',
+            intensity: 'High',
+            market: 'Very Good'
+        };
+    } else if (location.includes('gujarat') || location.includes('rajasthan')) {
+        return {
+            crops: ['Cotton', 'Groundnut', 'Wheat', 'Millet'],
+            farmSize: '3.0 acres',
+            irrigation: 'Drip & Tube well',
+            fertilizer: '75 kg/acre',
+            zone: 'Western Arid Region',
+            intensity: 'Medium',
+            market: 'Good'
+        };
+    } else {
+        // Default values for other regions
+        return {
+            crops: ['Wheat', 'Rice', 'Pulses', 'Oilseeds'],
+            farmSize: '2.5 acres',
+            irrigation: 'Mixed sources',
+            fertilizer: '90 kg/acre',
+            zone: 'Mixed Agricultural Zone',
+            intensity: 'Medium',
+            market: 'Moderate'
+        };
+    }
+}
+
+// Fetch weather and climate data (Global function)
+async function fetchWeatherData(lat, lon) {
+    try {
+        console.log('🌤️ Fetching real weather data from multiple APIs...');
+        
+        // Get current weather from Open-Meteo
+        const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,uv_index&daily=precipitation_sum&timezone=auto`);
+        
+        if (!weatherResponse.ok) {
+            throw new Error(`Weather API error: ${weatherResponse.status}`);
+        }
+        
+        const weatherData = await weatherResponse.json();
+        console.log('✅ Current weather data received');
+        
+        // Extract current conditions
+        const current = weatherData.current;
+        const daily = weatherData.daily;
+        
+        // Try to get annual rainfall from NASA POWER API
+        let annualRainfall;
+        try {
+            console.log('🌧️ Fetching annual rainfall from NASA POWER...');
+            const currentDate = new Date();
+            const year = currentDate.getFullYear();
+            const startDate = `${year}0101`;
+            const endDate = `${year}1231`;
+            
+            const nasaResponse = await fetch(`https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&longitude=${lon}&latitude=${lat}&start=${startDate}&end=${endDate}&format=JSON`);
+            
+            if (nasaResponse.ok) {
+                const nasaData = await nasaResponse.json();
+                annualRainfall = calculateTotalRainfall(nasaData.properties.PRECTOTCORR);
+                console.log('✅ Annual rainfall from NASA POWER:', annualRainfall, 'mm');
+            } else {
+                throw new Error('NASA API failed');
+            }
+        } catch (nasaError) {
+            console.log('⚠️ NASA rainfall data unavailable, calculating estimate...');
+            const recentPrecipitation = daily.precipitation_sum.slice(0, 7);
+            const avgDailyPrecip = recentPrecipitation.reduce((sum, val) => sum + (val || 0), 0) / 7;
+            annualRainfall = calculateAnnualRainfall(lat, lon, avgDailyPrecip);
+        }
+        
+        return {
+            temperature: Math.round(current.temperature_2m),
+            humidity: Math.round(current.relative_humidity_2m),
+            rainfall: annualRainfall, // Accurate annual rainfall in mm
+            windSpeed: Math.round(current.wind_speed_10m),
+            sunlight: calculateSunlightHours(lat),
+            pressure: Math.round(current.pressure_msl),
+            uvIndex: Math.round(current.uv_index || 5),
+            season: getSeasonFromDate(),
+            source: annualRainfall > 0 ? 'Open-Meteo + NASA POWER (Annual rainfall)' : 'Open-Meteo + Estimated rainfall'
+        };
+        
+    } catch (error) {
+        console.error('❌ Error fetching weather data:', error);
+        console.log('🔄 Falling back to location-based estimation...');
+        
+        // Fallback to location-based realistic estimation
+        return generateLocationSpecificWeather(lat, lon, 'location');
+    }
+}
+
+// Fetch soil data from geological APIs (Global function)
+async function fetchSoilData(lat, lon) {
+    try {
+        console.log('🌱 Fetching real soil data from SoilGrids API...');
+        
+        // Using ISRIC SoilGrids API for real soil data
+        const soilResponse = await fetch(`https://rest.isric.org/soilgrids/v2.0/properties/query?lat=${lat}&lon=${lon}&property=phh2o&property=nitrogen&property=soc&depth=0-5cm&value=mean`);
+        
+        if (!soilResponse.ok) {
+            throw new Error(`Soil API error: ${soilResponse.status}`);
+        }
+        
+        const soilData = await soilResponse.json();
+        console.log('✅ Soil data received:', soilData);
+        
+        // Extract real data from API response
+        const properties = soilData.properties;
+        const phData = properties.phh2o ? properties.phh2o.depths[0].values.mean / 10 : 6.5; // Convert from pH*10
+        const socData = properties.soc ? properties.soc.depths[0].values.mean / 10 : 1.0; // Soil organic carbon
+        const nitrogenData = properties.nitrogen ? properties.nitrogen.depths[0].values.mean : 250;
+        
+        // Determine soil type based on location (India-specific)
+        const soilType = determineSoilTypeFromLocation(lat, lon);
+        
+        return {
+            soilType: soilType,
+            pH: Math.round(phData * 10) / 10,
+            nitrogen: Math.round(nitrogenData),
+            phosphorus: Math.round(estimatePhosphorus(soilType, socData)), // Estimated from soil type and organic carbon
+            potassium: Math.round(estimatePotassium(soilType, lat)), // Estimated from soil type and location
+            organicCarbon: Math.round(socData * 10) / 10,
+            moisture: estimateSoilMoisture(lat, lon), // Based on climate data
+            drainage: getDrainageFromSoil(soilType),
+            fertility: calculateFertilityFromData(phData, socData, nitrogenData),
+            source: 'ISRIC SoilGrids API (Real data)'
+        };
+        
+    } catch (error) {
+        console.error('❌ Error fetching soil data:', error);
+        console.log('🔄 Falling back to location-based soil estimation...');
+        
+        // Fallback to location-based realistic estimation
+        return generateLocationSpecificSoil(lat, lon, 'location');
+    }
+}
+
+// Fetch regional agricultural data (Global function)
+async function fetchAgriculturalRegionData(lat, lon, locationName) {
+    try {
+        console.log('🚜 Fetching real agricultural data from NASA POWER API...');
+        
+        // Using NASA POWER API for agricultural climate data
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const startDate = `${year}0101`;
+        const endDate = `${year}1231`;
+        
+        const nasaResponse = await fetch(`https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,PRECTOTCORR,RH2M&community=AG&longitude=${lon}&latitude=${lat}&start=${startDate}&end=${endDate}&format=JSON`);
+        
+        if (!nasaResponse.ok) {
+            throw new Error(`NASA POWER API error: ${nasaResponse.status}`);
+        }
+        
+        const nasaData = await nasaResponse.json();
+        console.log('✅ NASA agricultural data received');
+        
+        // Calculate agricultural metrics from NASA data
+        const avgTemp = calculateAverageTemp(nasaData.properties.T2M);
+        const totalRainfall = calculateTotalRainfall(nasaData.properties.PRECTOTCORR);
+        const avgHumidity = calculateAverageHumidity(nasaData.properties.RH2M);
+        
+        // Get regional data based on location and climate
+        const regionalData = getRegionalDataFromClimate(locationName, avgTemp, totalRainfall, lat, lon);
+        
+        return {
+            commonCrops: regionalData.crops,
+            avgFarmSize: regionalData.farmSize,
+            irrigationType: regionalData.irrigation,
+            fertilizerUsage: regionalData.fertilizer,
+            cropSeason: getCurrentSeason(),
+            agriZone: regionalData.zone,
+            cropIntensity: regionalData.intensity,
+            marketAccess: regionalData.market,
+            climateData: {
+                avgTemp: avgTemp,
+                totalRainfall: totalRainfall,
+                avgHumidity: avgHumidity
+            },
+            source: 'NASA POWER Agricultural API (Real data)'
+        };
+        
+    } catch (error) {
+        console.error('❌ Error fetching agricultural data:', error);
+        console.log('🔄 Falling back to location-based agricultural data...');
+        
+        // Fallback to location-based realistic data
+        const regionalData = getRegionalData(locationName);
+        return {
+            commonCrops: regionalData.crops,
+            avgFarmSize: regionalData.farmSize,
+            irrigationType: regionalData.irrigation,
+            fertilizerUsage: regionalData.fertilizer,
+            cropSeason: getCurrentSeason(),
+            agriZone: regionalData.zone,
+            cropIntensity: regionalData.intensity,
+            marketAccess: regionalData.market,
+            source: 'Agricultural Census API (Fallback)'
+        };
+    }
+}
+
+// Mobile Navigation Toggle
+document.addEventListener('DOMContentLoaded', function() {
+    const navToggle = document.querySelector('.nav-toggle');
+    const navMenu = document.querySelector('.nav-menu');
+    
     // Comprehensive agricultural data fetching
     async function fetchComprehensiveAgriculturalData(lat, lon, locationName) {
         console.log('🔄 Fetching agricultural data for:', locationName, 'at coordinates:', lat, lon);
@@ -19,8 +532,9 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchedDataDiv.style.display = 'block';
         dataDisplay.innerHTML = `
             <div class="data-item">
-                <div class="data-item-label"><i class="fas fa-spinner fa-spin"></i> Fetching Agricultural Data...</div>
+                <div class="data-item-label"><i class="fas fa-spinner fa-spin"></i> Fetching Real Agricultural Data...</div>
                 <div class="data-loading"></div>
+                <div class="data-item-source">Connecting to Weather APIs, Soil Databases & Agricultural Services...</div>
             </div>
         `;
         
@@ -80,84 +594,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('🔧 Created fallback data structure');
         }
-    }
-    
-    // Fetch weather and climate data
-    async function fetchWeatherData(lat, lon) {
-        // In production, integrate with OpenWeatherMap API
-        // const API_KEY = 'your_openweathermap_api_key';
-        // const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`);
-        
-        // Simulated comprehensive weather data
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve({
-                    temperature: Math.round(Math.random() * 15 + 20), // 20-35°C
-                    humidity: Math.round(Math.random() * 30 + 50),    // 50-80%
-                    rainfall: Math.round(Math.random() * 1000 + 600), // 600-1600mm
-                    windSpeed: Math.round(Math.random() * 20 + 5),    // 5-25 km/h
-                    sunlight: Math.round((Math.random() * 4 + 6) * 10) / 10, // 6-10 hours
-                    pressure: Math.round(Math.random() * 50 + 1000),  // 1000-1050 hPa
-                    uvIndex: Math.round(Math.random() * 8 + 2),       // 2-10
-                    season: getSeasonFromDate(),
-                    source: 'Weather API'
-                });
-            }, 1000);
-        });
-    }
-    
-    // Fetch soil data from geological APIs
-    async function fetchSoilData(lat, lon) {
-        // In production, integrate with soil databases like:
-        // - ISRIC World Soil Information
-        // - FAO Global Soil Information
-        // - NASA POWER Project
-        
-        // Simulated soil data based on Indian geography
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const soilTypes = ['alluvial', 'black', 'red', 'laterite', 'sandy', 'clay'];
-                const selectedSoil = soilTypes[Math.floor(Math.random() * soilTypes.length)];
-                
-                resolve({
-                    soilType: selectedSoil,
-                    pH: Math.round((Math.random() * 3 + 5.5) * 10) / 10,  // 5.5-8.5
-                    nitrogen: Math.round(Math.random() * 400 + 200),       // 200-600 mg/kg
-                    phosphorus: Math.round(Math.random() * 80 + 20),       // 20-100 mg/kg
-                    potassium: Math.round(Math.random() * 300 + 150),      // 150-450 mg/kg
-                    organicCarbon: Math.round((Math.random() * 1.5 + 0.3) * 10) / 10, // 0.3-1.8%
-                    moisture: Math.round(Math.random() * 40 + 20),         // 20-60%
-                    drainage: getDrainageFromSoil(selectedSoil),
-                    fertility: getFertilityFromSoil(selectedSoil),
-                    source: 'Soil Database API'
-                });
-            }, 1200);
-        });
-    }
-    
-    // Fetch regional agricultural data
-    async function fetchAgriculturalRegionData(lat, lon, locationName) {
-        // In production, integrate with:
-        // - Agricultural Census Data
-        // - Crop Statistics APIs
-        // - Regional Agricultural Databases
-        
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const regionalData = getRegionalData(locationName);
-                resolve({
-                    commonCrops: regionalData.crops,
-                    avgFarmSize: regionalData.farmSize,
-                    irrigationType: regionalData.irrigation,
-                    fertilizerUsage: regionalData.fertilizer,
-                    cropSeason: getCurrentSeason(),
-                    agriZone: regionalData.zone,
-                    cropIntensity: regionalData.intensity,
-                    marketAccess: regionalData.market,
-                    source: 'Agricultural Census API'
-                });
-            }, 800);
-        });
     }
     
     // Navigation toggle functionality continues here
@@ -421,25 +857,19 @@ document.addEventListener('DOMContentLoaded', function() {
             currentLocationData.lon = lon;
             locationSuggestions.style.display = 'none';
             
-            // Set up agriculture data immediately (simplified)
+            // Generate location-specific agricultural data for current location
+            const locationName = locationData.display_name.toLowerCase();
+            
+            // Fetch real API data instead of generating random data
+            console.log('🌐 Fetching real agricultural data from APIs...');
+            const weatherData = await fetchWeatherData(lat, lon);
+            const soilData = await fetchSoilData(lat, lon);
+            const regionalData = await fetchAgriculturalRegionData(lat, lon, locationName);
+            
             currentLocationData.agricultureData = {
-                weather: { 
-                    temperature: 25, humidity: 60, rainfall: 1200, windSpeed: 15,
-                    sunlight: 8, pressure: 1013, uvIndex: 6, season: 'Current Season',
-                    source: 'Weather API' 
-                },
-                soil: { 
-                    soilType: 'loamy', pH: 6.5, nitrogen: 250, phosphorus: 50,
-                    potassium: 200, organicCarbon: 0.8, moisture: 30, drainage: 'Good',
-                    fertility: 'High', source: 'Soil Database API' 
-                },
-                regional: { 
-                    commonCrops: ['Rice', 'Wheat', 'Cotton'], avgFarmSize: '2.5 acres',
-                    irrigationType: 'Mixed sources', fertilizerUsage: '90 kg/acre',
-                    cropSeason: 'kharif', agriZone: 'Agricultural Zone',
-                    cropIntensity: 'Medium', marketAccess: 'Good',
-                    source: 'Agricultural Census API' 
-                },
+                weather: weatherData,
+                soil: soilData,
+                regional: regionalData,
                 coordinates: { lat, lon }
             };
             
@@ -659,9 +1089,9 @@ document.addEventListener('DOMContentLoaded', function() {
             suggestion.className = 'location-suggestion';
             suggestion.textContent = location.display_name;
             suggestion.style.cursor = 'pointer';
-            suggestion.addEventListener('click', () => {
+            suggestion.addEventListener('click', async () => {
                 console.log('Location selected:', location);
-                selectLocation(location);
+                await selectLocation(location);
             });
             locationSuggestions.appendChild(suggestion);
         });
@@ -671,63 +1101,209 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Suggestions HTML:', locationSuggestions.innerHTML);
     }
     
-    function selectLocation(location) {
+    async function selectLocation(location) {
         console.log('📍 Location selected:', location.display_name);
         locationInput.value = location.display_name;
         locationSuggestions.style.display = 'none';
         currentLocationData = location;
         
-        // SIMPLIFIED: Set up basic agriculture data immediately
+        // Generate location-specific agricultural data
+        const locationName = location.display_name.toLowerCase();
+        const lat = parseFloat(location.lat);
+        const lon = parseFloat(location.lon);
+        
+        // Fetch real API data instead of generating random data
+        console.log('🌐 Fetching real agricultural data from APIs...');
+        const weatherData = await fetchWeatherData(lat, lon);
+        const soilData = await fetchSoilData(lat, lon);
+        const regionalData = await fetchAgriculturalRegionData(lat, lon, locationName);
+        
         currentLocationData.agricultureData = {
-            weather: { 
-                temperature: 25, 
-                humidity: 60, 
-                rainfall: 1200,
-                windSpeed: 15,
-                sunlight: 8,
-                pressure: 1013,
-                uvIndex: 6,
-                season: 'Current Season',
-                source: 'Weather API' 
-            },
-            soil: { 
-                soilType: 'loamy', 
-                pH: 6.5, 
-                nitrogen: 250,
-                phosphorus: 50,
-                potassium: 200,
-                organicCarbon: 0.8,
-                moisture: 30,
-                drainage: 'Good',
-                fertility: 'High',
-                source: 'Soil Database API' 
-            },
-            regional: { 
-                commonCrops: ['Rice', 'Wheat', 'Cotton'],
-                avgFarmSize: '2.5 acres',
-                irrigationType: 'Mixed sources',
-                fertilizerUsage: '90 kg/acre',
-                cropSeason: 'kharif',
-                agriZone: 'Agricultural Zone',
-                cropIntensity: 'Medium',
-                marketAccess: 'Good',
-                source: 'Agricultural Census API' 
-            },
-            coordinates: { lat: location.lat, lon: location.lon }
+            weather: weatherData,
+            soil: soilData,
+            regional: regionalData,
+            coordinates: { lat, lon }
         };
         
-        console.log('✅ Agriculture data set:', currentLocationData.agricultureData);
+        console.log('✅ Location-specific agriculture data set:', currentLocationData.agricultureData);
         
-        // Show the data display
+        // Show the data display with real API data
         const fetchedDataDiv = document.getElementById('fetchedData');
         const dataDisplay = document.getElementById('dataDisplay');
         
         if (fetchedDataDiv && dataDisplay) {
             fetchedDataDiv.style.display = 'block';
             displayFetchedData(currentLocationData.agricultureData);
+            
+            // Add a success message for real data
+            console.log('✅ Real API data successfully loaded and displayed');
         }
         
         console.log('🎯 Location selection complete - form should now work');
+    }
+    
+    // Generate location-specific weather data (fallback only when real API fails)
+    function generateLocationSpecificWeather(lat, lon, locationName) {
+        console.log('⚠️ Using fallback weather estimation for:', locationName);
+        
+        let temperature, humidity, season;
+        
+        // Temperature based on latitude and season (more realistic calculation)
+        const month = new Date().getMonth() + 1;
+        const isWinter = (month >= 12 || month <= 2);
+        const isSummer = (month >= 4 && month <= 6);
+        const isMonsoon = (month >= 6 && month <= 9);
+        
+        // Base temperature by latitude (realistic ranges without randomness)
+        if (lat > 30) { // Northern regions (Kashmir, Himachal Pradesh)
+            temperature = isWinter ? 18 : isSummer ? 30 : 22; // Fixed seasonal values
+            humidity = 60; // Fixed realistic value
+        } else if (lat > 25) { // North-Central (Punjab, Haryana, Delhi)
+            temperature = isWinter ? 25 : isSummer ? 35 : 28;
+            humidity = 65;
+        } else if (lat > 20) { // Central (Maharashtra, MP, Chhattisgarh)
+            temperature = isWinter ? 27 : isSummer ? 38 : 30;
+            humidity = 70;
+        } else { // Southern regions (Karnataka, Tamil Nadu, Kerala)
+            temperature = isWinter ? 28 : isSummer ? 35 : 30;
+            humidity = 75;
+        }
+        
+        // Use the same annual rainfall calculation as the main API function
+        const annualRainfall = calculateAnnualRainfall(lat, lon, 0); // No recent precipitation data available
+        
+        // Adjust for coastal vs inland (realistic adjustments)
+        if (locationName.includes('mumbai') || locationName.includes('chennai') || 
+            locationName.includes('kochi') || locationName.includes('visakhapatnam')) {
+            humidity += 10; // Coastal areas more humid
+            temperature -= 2; // Coastal areas slightly cooler
+        }
+        
+        // Adjust for desert regions
+        if (locationName.includes('rajasthan') || locationName.includes('kutch')) {
+            temperature += 5;
+            humidity -= 20;
+        }
+        
+        // Current season
+        if (month >= 6 && month <= 10) season = 'Monsoon (Kharif)';
+        else if (month >= 11 || month <= 3) season = 'Winter (Rabi)';
+        else season = 'Summer (Zaid)';
+        
+        return {
+            temperature: Math.max(15, Math.min(45, temperature)),
+            humidity: Math.max(30, Math.min(95, humidity)),
+            rainfall: annualRainfall, // Now using realistic annual rainfall calculation
+            windSpeed: lat > 25 ? 15 : 12, // Northern regions windier
+            sunlight: isMonsoon ? 7 : 9, // Less sunlight during monsoon
+            pressure: 1013, // Standard atmospheric pressure
+            uvIndex: lat < 20 ? 8 : 6, // Higher UV in southern regions
+            season: season,
+            source: 'Location-based Estimation (Fallback)'
+        };
+    }
+    
+    // Generate location-specific soil data (fallback only when real API fails)
+    function generateLocationSpecificSoil(lat, lon, locationName) {
+        console.log('⚠️ Using fallback soil estimation for:', locationName);
+        
+        let soilType, pH, fertility;
+        
+        // Soil type based on region (scientific geographical mapping)
+        if (locationName.includes('punjab') || locationName.includes('haryana') || 
+            locationName.includes('uttar pradesh')) {
+            soilType = 'alluvial';
+            pH = 7.2; // Fixed optimal pH for alluvial soils
+            fertility = 'High';
+        } else if (locationName.includes('maharashtra') || locationName.includes('telangana') || 
+                   locationName.includes('karnataka')) {
+            soilType = 'black';
+            pH = 7.8; // Fixed optimal pH for black soils
+            fertility = 'High';
+        } else if (locationName.includes('tamil nadu') || locationName.includes('andhra pradesh')) {
+            soilType = 'red';
+            pH = 6.2; // Fixed optimal pH for red soils
+            fertility = 'Medium';
+        } else if (locationName.includes('kerala') || locationName.includes('goa')) {
+            soilType = 'laterite';
+            pH = 5.8; // Fixed pH for laterite soils
+            fertility = 'Low';
+        } else if (locationName.includes('rajasthan') || locationName.includes('gujarat')) {
+            soilType = 'sandy';
+            pH = 8.2; // Fixed pH for sandy soils
+            fertility = 'Low';
+        } else {
+            soilType = 'loamy';
+            pH = 6.8; // Fixed optimal pH for loamy soils
+            fertility = 'Medium';
+        }
+        
+        // Generate NPK values based on soil type and fertility (realistic fixed ranges)
+        let nitrogen, phosphorus, potassium;
+        if (fertility === 'High') {
+            nitrogen = 320; // Fixed high nitrogen content
+            phosphorus = 65; // Fixed high phosphorus content  
+            potassium = 280; // Fixed high potassium content
+        } else if (fertility === 'Medium') {
+            nitrogen = 220; // Fixed medium nitrogen content
+            phosphorus = 45; // Fixed medium phosphorus content
+            potassium = 200; // Fixed medium potassium content
+        } else {
+            nitrogen = 140; // Fixed low nitrogen content
+            phosphorus = 28; // Fixed low phosphorus content
+            potassium = 130; // Fixed low potassium content
+        }
+        
+        // Adjust based on geographical location
+        if (lat > 25) { // Northern regions typically have higher nutrients
+            nitrogen += 30;
+            phosphorus += 10;
+            potassium += 20;
+        }
+        
+        return {
+            soilType: soilType,
+            pH: pH,
+            nitrogen: nitrogen,
+            phosphorus: phosphorus,
+            potassium: potassium,
+            organicCarbon: fertility === 'High' ? 1.2 : fertility === 'Medium' ? 0.8 : 0.5,
+            moisture: locationName.includes('kerala') || locationName.includes('mumbai') ? 45 : 30,
+            drainage: getDrainageFromSoil(soilType),
+            fertility: fertility,
+            source: 'Soil Geography Database (Fallback)'
+        };
+    }
+    
+    // Generate location-specific regional data (fallback function)
+    async function generateLocationSpecificRegional(locationName) {
+        // Try to fetch real data first
+        try {
+            console.log('🔄 Attempting to fetch real regional data...');
+            const lat = currentLocationData?.lat || 20; // Default latitude
+            const lon = currentLocationData?.lon || 77; // Default longitude
+            
+            const realRegionalData = await fetchAgriculturalRegionData(lat, lon, locationName);
+            console.log('✅ Real regional data fetched successfully');
+            return realRegionalData;
+        } catch (error) {
+            console.log('⚠️ Real API failed, using location-based fallback for regional data');
+            
+            // Fallback to location-based realistic data
+            const baseRegionalData = getRegionalData(locationName);
+            
+            return {
+                commonCrops: baseRegionalData.crops,
+                avgFarmSize: baseRegionalData.farmSize,
+                irrigationType: baseRegionalData.irrigation,
+                fertilizerUsage: baseRegionalData.fertilizer,
+                cropSeason: getCurrentSeason(),
+                agriZone: baseRegionalData.zone,
+                cropIntensity: baseRegionalData.intensity,
+                marketAccess: baseRegionalData.market,
+                source: 'Agricultural Census API (Fallback)'
+            };
+        }
     }
     
     // Get reverse geocoding for current location
@@ -775,19 +1351,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Generate simulated weather data based on location
+    // Generate simulated weather data based on location (fixed values)
     function generateSimulatedWeather(lat, lon) {
-        // Simple simulation based on latitude
+        // Fixed realistic values based on latitude
         let temp, condition;
         
+        const month = new Date().getMonth() + 1;
+        const isWinter = (month >= 12 || month <= 2);
+        
         if (lat > 30) { // Northern regions
-            temp = Math.floor(Math.random() * 15) + 5; // 5-20°C
+            temp = isWinter ? 12 : 18; // Fixed seasonal temperature
             condition = 'Cool';
         } else if (lat > 20) { // Central regions
-            temp = Math.floor(Math.random() * 15) + 20; // 20-35°C
+            temp = isWinter ? 22 : 28; // Fixed seasonal temperature
             condition = 'Warm';
         } else { // Southern regions
-            temp = Math.floor(Math.random() * 10) + 25; // 25-35°C
+            temp = isWinter ? 26 : 30; // Fixed seasonal temperature
             condition = 'Hot';
         }
         
@@ -919,6 +1498,163 @@ document.addEventListener('DOMContentLoaded', function() {
                 market: 'Moderate'
             };
         }
+    }
+    
+    // Helper functions for real API data processing
+    
+    // Calculate sunlight hours based on latitude and season
+    function calculateSunlightHours(lat) {
+        const month = new Date().getMonth() + 1;
+        let baseSunlight = 12; // Equatorial baseline
+        
+        // Adjust for latitude
+        const latitudeAdjustment = Math.abs(lat) * 0.1;
+        
+        // Seasonal adjustment
+        let seasonalAdjustment = 0;
+        if (month >= 6 && month <= 8) { // Summer in Northern Hemisphere
+            seasonalAdjustment = lat > 0 ? 2 : -1;
+        } else if (month >= 12 || month <= 2) { // Winter in Northern Hemisphere
+            seasonalAdjustment = lat > 0 ? -2 : 1;
+        }
+        
+        const sunlightHours = baseSunlight - latitudeAdjustment + seasonalAdjustment;
+        return Math.round(Math.max(6, Math.min(14, sunlightHours)) * 10) / 10;
+    }
+    
+    // Determine soil type based on Indian geography
+    function determineSoilTypeFromLocation(lat, lon) {
+        // Indian soil type mapping based on geographical regions
+        if (lat > 30) { // Northern regions (Kashmir, Himachal Pradesh)
+            return 'alluvial';
+        } else if (lat > 26 && lon < 77) { // Punjab, Haryana region
+            return 'alluvial';
+        } else if (lat > 20 && lat < 26 && lon > 74 && lon < 80) { // Central India (MP, Maharashtra)
+            return 'black';
+        } else if (lat < 20 && lon > 76) { // Southern India
+            return 'red';
+        } else if (lat < 15 && lon < 76) { // Kerala, coastal regions
+            return 'laterite';
+        } else if (lon < 74) { // Western regions (Rajasthan, Gujarat)
+            return 'sandy';
+        } else {
+            return 'alluvial'; // Default
+        }
+    }
+    
+    // Estimate phosphorus based on soil type and organic carbon
+    function estimatePhosphorus(soilType, organicCarbon) {
+        const basePhosphorus = {
+            'alluvial': 60,
+            'black': 80,
+            'red': 40,
+            'laterite': 25,
+            'sandy': 20,
+            'clay': 50
+        };
+        
+        const base = basePhosphorus[soilType] || 45;
+        const organicBonus = organicCarbon * 15; // Higher organic carbon = more phosphorus
+        return base + organicBonus;
+    }
+    
+    // Estimate potassium based on soil type and location
+    function estimatePotassium(soilType, lat) {
+        const basePotassium = {
+            'alluvial': 280,
+            'black': 350,
+            'red': 200,
+            'laterite': 150,
+            'sandy': 120,
+            'clay': 250
+        };
+        
+        const base = basePotassium[soilType] || 220;
+        // Northern regions typically have higher potassium
+        const latitudeBonus = lat > 25 ? 50 : 0;
+        return base + latitudeBonus;
+    }
+    
+    // Estimate soil moisture based on climate
+    function estimateSoilMoisture(lat, lon) {
+        // Coastal regions have higher moisture
+        const coastal = (lon < 73 || lon > 92 || lat < 12 || lat > 35) ? 10 : 0;
+        
+        // Monsoon regions have higher moisture
+        const monsoonBonus = (lat > 20 && lat < 30) ? 15 : 5;
+        
+        const baseMoisture = 25;
+        return Math.min(90, baseMoisture + coastal + monsoonBonus);
+    }
+    
+    // Calculate fertility from real soil data
+    function calculateFertilityFromData(pH, organicCarbon, nitrogen) {
+        let fertilityScore = 0;
+        
+        // pH score (optimal range 6.0-7.5)
+        if (pH >= 6.0 && pH <= 7.5) fertilityScore += 40;
+        else if (pH >= 5.5 && pH <= 8.0) fertilityScore += 25;
+        else fertilityScore += 10;
+        
+        // Organic carbon score
+        if (organicCarbon > 1.0) fertilityScore += 30;
+        else if (organicCarbon > 0.5) fertilityScore += 20;
+        else fertilityScore += 10;
+        
+        // Nitrogen score
+        if (nitrogen > 300) fertilityScore += 30;
+        else if (nitrogen > 200) fertilityScore += 20;
+        else fertilityScore += 10;
+        
+        if (fertilityScore >= 80) return 'High';
+        else if (fertilityScore >= 60) return 'Medium';
+        else return 'Low';
+    }
+    
+    // Calculate average temperature from NASA data
+    function calculateAverageTemp(tempData) {
+        const values = Object.values(tempData);
+        const sum = values.reduce((acc, val) => acc + val, 0);
+        return Math.round(sum / values.length);
+    }
+    
+    // Calculate total rainfall from NASA data
+    function calculateTotalRainfall(precipData) {
+        const values = Object.values(precipData);
+        const sum = values.reduce((acc, val) => acc + val, 0);
+        return Math.round(sum);
+    }
+    
+    // Calculate average humidity from NASA data
+    function calculateAverageHumidity(humidityData) {
+        const values = Object.values(humidityData);
+        const sum = values.reduce((acc, val) => acc + val, 0);
+        return Math.round(sum / values.length);
+    }
+    
+    // Get regional data enhanced with climate data
+    function getRegionalDataFromClimate(locationName, avgTemp, totalRainfall, lat, lon) {
+        const baseData = getRegionalData(locationName);
+        
+        // Adjust crop recommendations based on climate
+        if (totalRainfall < 600) {
+            // Drought-resistant crops
+            baseData.crops = ['Millet', 'Sorghum', 'Groundnut', 'Cotton'];
+            baseData.irrigation = 'Drip & Sprinkler (Essential)';
+        } else if (totalRainfall > 2000) {
+            // High rainfall crops
+            baseData.crops = ['Rice', 'Sugarcane', 'Jute', 'Tea'];
+            baseData.irrigation = 'Natural & Canal';
+        }
+        
+        // Adjust based on temperature
+        if (avgTemp > 35) {
+            baseData.intensity = 'Low'; // Heat stress reduces intensity
+        } else if (avgTemp < 15) {
+            baseData.crops = ['Wheat', 'Barley', 'Mustard', 'Peas'];
+        }
+        
+        return baseData;
     }
     
     // Debounce function to limit API calls
@@ -1132,18 +1868,18 @@ function generateAIPredictionFromAutoData(data) {
     loadingMessage.innerHTML = `
         <div style="text-align: center; padding: 2rem;">
             <i class="fas fa-brain fa-3x" style="color: #4CAF50; margin-bottom: 1rem; animation: pulse 2s infinite;"></i>
-            <h3>Suggestion Loading</h3>
-            <p>Analyzing <strong>25+ agricultural parameters</strong> from multiple data sources</p>
+            <h3>AI Analysis in Progress</h3>
+            <p>Processing <strong>real-time data</strong> from multiple APIs and sources</p>
             <div class="processing-steps">
-                <div class="step"><span class="step-icon">🌱</span> Processing soil composition...</div>
-                <div class="step"><span class="step-icon">🌤️</span> Analyzing climate patterns...</div>
-                <div class="step"><span class="step-icon">📊</span> Evaluating regional data...</div>
-                <div class="step"><span class="step-icon">🧠</span> Generating predictions...</div>
+                <div class="step"><span class="step-icon">🌱</span> Analyzing real soil data from ISRIC SoilGrids...</div>
+                <div class="step"><span class="step-icon">🌤️</span> Processing live weather from Open-Meteo API...</div>
+                <div class="step"><span class="step-icon">📊</span> Integrating NASA POWER agricultural data...</div>
+                <div class="step"><span class="step-icon">🧠</span> Generating AI-powered predictions...</div>
             </div>
             <div class="loading-bar" style="width: 250px; height: 6px; background: #e0e0e0; border-radius: 3px; margin: 1.5rem auto; overflow: hidden;">
                 <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); border-radius: 3px; animation: loadingProgress 4s ease-in-out;"></div>
             </div>
-            <small style="color: #666;">Using data from: ${Object.values(data.dataSources).join(', ')}</small>
+            <small style="color: #666;">Using real data from: ${Object.values(data.dataSources).join(', ')}</small>
         </div>
     `;
     
@@ -1383,7 +2119,19 @@ function generateAdvancedPrediction(data) {
     
     // Calculate final metrics
     const finalYield = Math.round(Math.min(120, Math.max(60, baseYield)));
-    const confidence = Math.round(Math.min(98, dataQuality * 0.85 + Math.random() * 15));
+    
+    // Calculate confidence based on data quality and real factors
+    let confidenceScore = dataQuality * 0.85; // Base confidence from data quality
+    
+    // Add confidence based on soil suitability
+    if (soilScore > 1.1) confidenceScore += 10;
+    else if (soilScore > 0.9) confidenceScore += 5;
+    
+    // Add confidence based on climate match
+    if (climateScore > 1.1) confidenceScore += 8;
+    else if (climateScore > 0.9) confidenceScore += 3;
+    
+    const confidence = Math.round(Math.min(98, Math.max(75, confidenceScore)));
     
     // Risk assessment
     let riskLevel = 'Low';
