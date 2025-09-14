@@ -205,6 +205,329 @@ body {
     font-weight: 500;
 }
 
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+    color: #2d5016;
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.close-btn {
+    font-size: 2rem;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.prediction-form {
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.8rem;
+    font-weight: 600;
+    color: #2d5016;
+    font-size: 1.1rem;
+    position: relative;
+}
+
+.form-group label::after {
+    content: '*';
+    color: #e74c3c;
+    margin-left: 4px;
+    font-weight: bold;
+}
+
+.form-group label i {
+    margin-right: 8px;
+    color: #4CAF50;
+    font-size: 1.1rem;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #e8f5e8;
+    border-radius: 12px;
+    font-size: 1rem;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234CAF50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 20px;
+    box-shadow: 0 2px 10px rgba(76, 175, 80, 0.1);
+}
+
+.form-group select:hover {
+    border-color: #4CAF50;
+    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.15);
+    transform: translateY(-1px);
+}
+
+.form-group select:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1), 0 4px 20px rgba(76, 175, 80, 0.2);
+    transform: translateY(-1px);
+}
+
+.form-group select:invalid {
+    color: #999;
+}
+
+.form-group select option {
+    padding: 12px 15px;
+    background-color: white;
+    color: #333;
+    font-size: 1rem;
+}
+
+.form-group select option:hover {
+    background-color: #f0f8f0;
+}
+
+.form-group select option:checked,
+.form-group select option:focus {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.form-group select option[value=""] {
+    color: #999;
+    font-style: italic;
+}
+
+/* Custom Select Container for Enhanced Styling */
+.select-container {
+    position: relative;
+    display: block;
+}
+
+.select-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid #4CAF50;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.select-container:hover::before {
+    opacity: 1;
+}
+
+.form-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e8f5e8;
+}
+
+.form-buttons .btn {
+    min-width: 140px;
+    position: relative;
+    overflow: hidden;
+}
+
+.form-buttons .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.form-buttons .btn:hover::before {
+    left: 100%;
+}
+
+/* Form validation styles */
+.form-group select:valid {
+    border-color: #4CAF50;
+    background-color: #f8fff8;
+}
+
+.form-group select:invalid:not(:placeholder-shown) {
+    border-color: #e74c3c;
+    background-color: #fff8f8;
+}
+
+/* Loading state for select */
+.form-group select.loading {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234CAF50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M21 12a9 9 0 11-6.219-8.56'/%3e%3c/svg%3e");
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { background-position: right 15px center; }
+    to { background-position: right 15px center; }
+}
+
+/* Improved option styling for better visibility */
+.form-group select option {
+    padding: 14px 18px;
+    background-color: white;
+    color: #333;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+}
+
+.form-group select option:hover {
+    background-color: #f8fff8;
+    color: #2d5016;
+    font-weight: 600;
+}
+
+.form-group select option:checked,
+.form-group select option:focus {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: 600;
+}
+
+.form-group select option[value=""] {
+    color: #999;
+    font-style: italic;
+    background-color: #f9f9f9;
+    font-weight: 400;
+    border-bottom: 1px solid #eee;
+}
+
+.form-group select option:first-child {
+    color: #999;
+    font-style: italic;
+    background-color: #f9f9f9;
+    font-weight: 400;
+    border-bottom: 1px solid #eee;
+}
+
+.prediction-result {
+    padding: 2rem;
+    text-align: center;
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.result-header i {
+    font-size: 2rem;
+    color: #4CAF50;
+}
+
+.result-header h3 {
+    color: #2d5016;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.result-content {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.result-item:last-child {
+    border-bottom: none;
+}
+
+.result-label {
+    font-weight: 600;
+    color: #2d5016;
+}
+
+.result-value {
+    color: #4CAF50;
+    font-weight: 500;
+}
+
 /* Features Section */
 .features {
     padding: 80px 2rem;
@@ -310,45 +633,6 @@ body {
     font-size: 1.2rem;
 }
 
-/* Problem Statement Section */
-.problem-statement {
-    padding: 80px 2rem;
-    background: #f8f9fa;
-}
-
-.problem-statement h2 {
-    text-align: center;
-    font-size: 2.5rem;
-    color: #2d5016;
-    margin-bottom: 3rem;
-}
-
-.problem-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 2rem;
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-.problem-item {
-    background: white;
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-}
-
-.problem-item h3 {
-    color: #2d5016;
-    margin-bottom: 1rem;
-    font-size: 1.3rem;
-}
-
-.problem-item p {
-    color: #666;
-    margin-bottom: 0.5rem;
-}
-
 /* Contact Section */
 .contact {
     padding: 80px 2rem;
@@ -436,6 +720,54 @@ body {
     color: #4CAF50;
 }
 
+/* Form group focus states */
+.form-group.focused {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
+}
+
+.form-group.focused label {
+    color: #4CAF50;
+}
+
+.form-group select.selected {
+    border-color: #4CAF50;
+    background-color: #f8fff8;
+    font-weight: 500;
+}
+
+/* Enhanced error states */
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.error-message::before {
+    content: '⚠️';
+    font-size: 0.9rem;
+}
+
+/* Checkmark animation */
+.checkmark {
+    animation: checkmarkBounce 0.6s ease;
+}
+
+@keyframes checkmarkBounce {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-menu {
@@ -475,5 +807,112 @@ body {
     
     .features-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+    
+    .modal-header {
+        padding: 1.5rem 1.5rem 1rem;
+    }
+    
+    .prediction-form {
+        padding: 1.5rem;
+    }
+    
+    .form-buttons {
+        flex-direction: column;
+    }
+    
+    .form-group select {
+        padding: 18px 20px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
+/* Form group focus states */
+.form-group.focused {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
+}
+
+.form-group.focused label {
+    color: #4CAF50;
+}
+
+.form-group select.selected {
+    border-color: #4CAF50;
+    background-color: #f8fff8;
+    font-weight: 500;
+}
+
+/* Enhanced error states */
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.error-message::before {
+    content: '⚠️';
+    font-size: 0.9rem;
+}
+
+/* Checkmark animation */
+.checkmark {
+    animation: checkmarkBounce 0.6s ease;
+}
+
+@keyframes checkmarkBounce {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+    
+    .modal-header {
+        padding: 1.5rem 1.5rem 1rem;
+    }
+    
+    .prediction-form {
+        padding: 1.5rem;
+    }
+    
+    .form-buttons {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    
+    .form-buttons .btn {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .result-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .form-group select {
+        padding: 18px 20px;
+        font-size: 16px; /* Prevents zoom on iOS */
     }
 }

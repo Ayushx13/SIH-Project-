@@ -37,7 +37,7 @@
                 <h1>AI-Powered Crop Yield Prediction & Optimization</h1>
                 <p>Empowering farmers with data-driven insights to optimize irrigation, fertilization, and pest control for maximum productivity.</p>
                 <div class="hero-buttons">
-                    <button class="btn btn-primary">Get Started</button>
+                    <button class="btn btn-primary" id="getStartedBtn">Get Started</button>
                     <button class="btn btn-secondary">Learn More</button>
                 </div>
             </div>
@@ -45,6 +45,107 @@
                 <div class="hero-placeholder">
                     <i class="fas fa-leaf"></i>
                     <p>Smart Agriculture Technology</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prediction Form Modal -->
+        <div id="predictionModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Crop Yield Prediction</h2>
+                    <span class="close-btn" id="closeModal">&times;</span>
+                </div>
+                <form id="predictionForm" class="prediction-form">
+                    <div class="form-group">
+                        <label for="soilType">
+                            <i class="fas fa-mountain"></i>Soil Type
+                        </label>
+                        <div class="select-container">
+                            <select id="soilType" name="soilType" required>
+                                <option value="">Select your soil type...</option>
+                                <option value="sandy"> Sandy Soil - Well-draining, loose texture</option>
+                                <option value="clay"> Clay Soil - Dense, nutrient-rich</option>
+                                <option value="loamy"> Loamy Soil - Balanced, fertile</option>
+                                <option value="silt"> Silt Soil - Fine particles, moisture-retaining</option>
+                                <option value="peaty"> Peaty Soil - Organic, acidic</option>
+                                <option value="chalky"> Chalky Soil - Alkaline, free-draining</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="temperature">
+                            <i class="fas fa-thermometer-half"></i>Temperature Range
+                        </label>
+                        <div class="select-container">
+                            <select id="temperature" name="temperature" required>
+                                <option value="">Select temperature range...</option>
+                                <option value="cold"> Cold (0-15°C) - Cool climate crops</option>
+                                <option value="moderate"> Moderate (15-25°C) - Ideal growing conditions</option>
+                                <option value="warm"> Warm (25-35°C) - Heat-loving crops</option>
+                                <option value="hot"> Hot (35°C+) - Heat-resistant varieties</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="location">
+                            <i class="fas fa-map-marker-alt"></i>Location/State
+                        </label>
+                        <div class="select-container">
+                            <select id="location" name="location" required>
+                                <option value="">Select your state...</option>
+                                <option value="andhra-pradesh"> Andhra Pradesh</option>
+                                <option value="assam"> Assam</option>
+                                <option value="bihar"> Bihar</option>
+                                <option value="gujarat"> Gujarat</option>
+                                <option value="haryana"> Haryana</option>
+                                <option value="karnataka"> Karnataka</option>
+                                <option value="kerala"> Kerala</option>
+                                <option value="madhya-pradesh"> Madhya Pradesh</option>
+                                <option value="maharashtra"> Maharashtra</option>
+                                <option value="odisha"> Odisha</option>
+                                <option value="punjab"> Punjab</option>
+                                <option value="rajasthan"> Rajasthan</option>
+                                <option value="tamil-nadu"> Tamil Nadu</option>
+                                <option value="uttar-pradesh"> Uttar Pradesh</option>
+                                <option value="west-bengal"> West Bengal</option>
+                                <option value="other"> Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-primary">Get Prediction</button>
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    </div>
+                </form>
+                
+                <div id="predictionResult" class="prediction-result" style="display: none;">
+                    <div class="result-header">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>Prediction Results</h3>
+                    </div>
+                    <div class="result-content">
+                        <div class="result-item">
+                            <span class="result-label">Recommended Crops:</span>
+                            <span class="result-value" id="recommendedCrops"></span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Expected Yield:</span>
+                            <span class="result-value" id="expectedYield"></span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Best Planting Season:</span>
+                            <span class="result-value" id="plantingSeason"></span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Irrigation Recommendation:</span>
+                            <span class="result-value" id="irrigationRec"></span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="newPredictionBtn">New Prediction</button>
                 </div>
             </div>
         </div>
@@ -146,25 +247,6 @@
                         <i class="fas fa-users"></i>
                         <p>Empowering Farmers</p>
                     </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Problem Statement Section -->
-    <section class="problem-statement">
-        <div class="container">
-            <h2>Addressing Agricultural Challenges</h2>
-            <div class="problem-grid">
-                <div class="problem-item">
-                    <h3>Problem Statement ID: 25044</h3>
-                    <p><strong>Organization:</strong> Government of Odisha</p>
-                    <p><strong>Department:</strong> Electronics & IT Department</p>
-                    <p><strong>Theme:</strong> Agriculture, FoodTech & Rural Development</p>
-                </div>
-                <div class="problem-item">
-                    <h3>Our Solution</h3>
-                    <p>A scalable web and mobile application that increases farmer productivity by at least 10% through data-driven insights and AI-powered recommendations for crop management.</p>
                 </div>
             </div>
         </div>
