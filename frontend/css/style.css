@@ -159,7 +159,7 @@ body {
     align-items: center;
 }
 
-.hero-placeholder, .about-placeholder {
+.hero-placeholder {
     background: #f8f9fa;
     border: 2px dashed #ddd;
     border-radius: 20px;
@@ -173,13 +173,13 @@ body {
     align-items: center;
 }
 
-.hero-placeholder i, .about-placeholder i {
+.hero-placeholder i {
     font-size: 4rem;
     color: #4CAF50;
     margin-bottom: 1rem;
 }
 
-.hero-placeholder p, .about-placeholder p {
+.hero-placeholder p {
     color: #666;
     font-weight: 500;
 }
@@ -882,48 +882,175 @@ optgroup option {
     line-height: 1.6;
 }
 
-/* About Section */
-.about {
+/* Pest Management Section */
+.pest-management {
     padding: 80px 2rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
 }
 
-.about-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: center;
-}
-
-.about h2 {
+.pest-management h2 {
+    text-align: center;
     font-size: 2.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
+    color: white;
 }
 
-.about p {
+.pest-management > .container > p {
+    text-align: center;
     font-size: 1.1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
     opacity: 0.9;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.about-points {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+.pest-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto 3rem;
 }
 
-.point {
-    display: flex;
+.pest-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #333;
+}
+
+.pest-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.pest-image {
+    height: 300px;
+    overflow: hidden;
+    position: relative;
+}
+
+.pest-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.pest-card:hover .pest-image img {
+    transform: scale(1.05);
+}
+
+.pest-info {
+    padding: 1.5rem;
+}
+
+.pest-info h3 {
+    font-size: 1.4rem;
+    color: #2d5016;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.scientific-name {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.pest-label {
+    display: inline-flex;
     align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.pest-label i {
+    font-size: 0.9rem;
+}
+
+.pesticide-info h4 {
+    color: #2d5016;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.pesticide-info ul {
+    list-style: none;
+    margin-bottom: 1rem;
+}
+
+.pesticide-info li {
+    padding: 0.3rem 0;
+    border-left: 3px solid #4CAF50;
+    padding-left: 0.8rem;
+    margin-bottom: 0.5rem;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 0 5px 5px 0;
+}
+
+.pesticide-info strong {
+    color: #2d5016;
+}
+
+.treatment-tips {
+    background: rgba(33, 150, 243, 0.1);
+    padding: 0.8rem;
+    border-radius: 8px;
+    border-left: 4px solid #2196F3;
+}
+
+.treatment-tips small {
+    color: #1976D2;
+    font-weight: 500;
+}
+
+.treatment-tips i {
+    margin-right: 0.5rem;
+}
+
+.pest-warning {
+    background: rgba(255, 193, 7, 0.2);
+    border: 2px solid #FFC107;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.warning-content {
+    display: flex;
+    align-items: flex-start;
     gap: 1rem;
 }
 
-.point i {
-    color: #4CAF50;
-    font-size: 1.2rem;
+.warning-content i {
+    color: #FF9800;
+    font-size: 1.5rem;
+    margin-top: 0.2rem;
+}
+
+.warning-content h4 {
+    color: #FF8F00;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.warning-content p {
+    color: #FFF8E1;
+    opacity: 0.9;
+    line-height: 1.6;
 }
 
 /* Contact Section */
@@ -1085,8 +1212,25 @@ optgroup option {
         gap: 1rem;
     }
     
-    .about-content {
+    .pest-grid {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .pest-management {
+        padding: 60px 1rem;
+    }
+    
+    .pest-management h2 {
+        font-size: 2rem;
+    }
+    
+    .pest-card {
+        margin-bottom: 1rem;
+    }
+    
+    .warning-content {
+        flex-direction: column;
         text-align: center;
     }
     

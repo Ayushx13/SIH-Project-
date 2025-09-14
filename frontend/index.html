@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CropYield AI - Smart Agriculture Platform</title>
+    <title>Krushaksathi - Smart Agriculture Platform</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,12 +14,12 @@
         <nav class="navbar">
             <div class="nav-brand">
                 <i class="fas fa-seedling"></i>
-                <span>CropYield AI</span>
+                <span>Krushaksathi</span>
             </div>
             <ul class="nav-menu">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#features">Features</a></li>
-                <li><a href="#about">About</a></li>
+                <li><a href="#pest-management">Pest Management</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
             <div class="nav-toggle">
@@ -218,36 +218,102 @@
         </div>
     </section>
 
-    <!-- About Section -->
-    <section id="about" class="about">
+    <!-- Pest Management Section -->
+    <section id="pest-management" class="pest-management">
         <div class="container">
-            <div class="about-content">
-                <div class="about-text">
-                    <h2>About CropYield AI</h2>
-                    <p>Developed for the Smart India Hackathon 2025, CropYield AI addresses the critical need for agricultural optimization in India. Our platform leverages cutting-edge artificial intelligence to provide farmers with actionable insights.</p>
-                    <div class="about-points">
-                        <div class="point">
-                            <i class="fas fa-check"></i>
-                            <span>Historical agricultural data analysis</span>
-                        </div>
-                        <div class="point">
-                            <i class="fas fa-check"></i>
-                            <span>Real-time weather pattern integration</span>
-                        </div>
-                        <div class="point">
-                            <i class="fas fa-check"></i>
-                            <span>Soil health metrics monitoring</span>
-                        </div>
-                        <div class="point">
-                            <i class="fas fa-check"></i>
-                            <span>Tailored regional recommendations</span>
+            <h2>Common Pests & Treatment</h2>
+            <p>Identify and manage agricultural pests with recommended pesticide solutions</p>
+            
+            <div class="pest-grid">
+                <!-- Pest 1: Aphids -->
+                <div class="pest-card">
+                    <div class="pest-image">
+                        <img src="./images/iamge 1.jpg" alt="Aphids on plant leaves" loading="lazy">
+                    </div>
+                    <div class="pest-info">
+                        <h3>Aphids</h3>
+                        <p class="scientific-name">(Sitobion avenae)</p>
+                        <div class="pest-details">
+                            <div class="pest-label">
+                                <i class="fas fa-bug"></i>
+                                <span>Common Pest</span>
+                            </div>
+                            <div class="pesticide-info">
+                                <h4>Recommended Pesticides:</h4>
+                                <ul>
+                                    <li><strong>Dimethoate</strong> - Systemic insecticide</li>
+                                    <li><strong>Imidacloprid</strong> - Neonicotinoid insecticide</li>
+                                </ul>
+                            </div>
+                            <div class="treatment-tips">
+                                <small><i class="fas fa-info-circle"></i> Apply during early morning or evening for best results</small>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="about-image">
-                    <div class="about-placeholder">
-                        <i class="fas fa-users"></i>
-                        <p>Empowering Farmers</p>
+
+                <!-- Pest 2: Pink Bollworm -->
+                <div class="pest-card">
+                    <div class="pest-image">
+                        <img src="./images/image 2.jpg" alt="Pink bollworm damage on cotton" loading="lazy">
+                    </div>
+                    <div class="pest-info">
+                        <h3>Pink Bollworm</h3>
+                        <p class="scientific-name">(Pectinophora gossypiella)</p>
+                        <div class="pest-details">
+                            <div class="pest-label">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Major Cotton Pest</span>
+                            </div>
+                            <div class="pesticide-info">
+                                <h4>Recommended Pesticides:</h4>
+                                <ul>
+                                    <li><strong>Chlorantraniliprole</strong> - Selective insecticide</li>
+                                    <li><strong>Cypermethrin</strong> - Pyrethroid insecticide</li>
+                                    <li><strong>Emamectin benzoate</strong> - Biological insecticide</li>
+                                </ul>
+                            </div>
+                            <div class="treatment-tips">
+                                <small><i class="fas fa-info-circle"></i> Monitor cotton bolls regularly during flowering stage</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pest 3: Early Shoot Borer -->
+                <div class="pest-card">
+                    <div class="pest-image">
+                        <img src="./images/image 3.jpg" alt="Sugarcane shoot borer damage" loading="lazy">
+                    </div>
+                    <div class="pest-info">
+                        <h3>Early Shoot Borer</h3>
+                        <p class="scientific-name">(Chilo infuscatellus)</p>
+                        <div class="pest-details">
+                            <div class="pest-label">
+                                <i class="fas fa-seedling"></i>
+                                <span>Sugarcane Pest</span>
+                            </div>
+                            <div class="pesticide-info">
+                                <h4>Recommended Pesticides:</h4>
+                                <ul>
+                                    <li><strong>Chlorpyrifos</strong> - Organophosphate insecticide</li>
+                                    <li><strong>Carbofuran</strong> - Systemic insecticide</li>
+                                </ul>
+                            </div>
+                            <div class="treatment-tips">
+                                <small><i class="fas fa-info-circle"></i> Best applied at early crop stage (2-3 months)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pest-warning">
+                <div class="warning-content">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <h4>Important Safety Notice</h4>
+                        <p>Always follow manufacturer guidelines for pesticide application. Use appropriate protective equipment and maintain recommended waiting periods before harvest.</p>
                     </div>
                 </div>
             </div>
