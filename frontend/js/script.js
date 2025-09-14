@@ -75,7 +75,40 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Location input functionality
-    locationInput.addEventListener('input', debounce(searchLocations, 300));
+    if (locationInput) {
+        // Simple input event listener
+        locationInput.addEventListener('input', function(e) {
+            console.log('Input event fired, value:', e.target.value);
+            const query = e.target.value.trim();
+            
+            // Clear previous timeout
+            if (locationInput.searchTimeout) {
+                clearTimeout(locationInput.searchTimeout);
+            }
+            
+            // Set new timeout for debouncing
+            locationInput.searchTimeout = setTimeout(() => {
+                searchLocations(query);
+            }, 300);
+        });
+        
+        // Also add focus event to show suggestions if they exist
+        locationInput.addEventListener('focus', function() {
+            if (locationSuggestions.children.length > 0 && locationInput.value.length >= 3) {
+                locationSuggestions.style.display = 'block';
+            }
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!locationInput.contains(e.target) && !locationSuggestions.contains(e.target)) {
+                locationSuggestions.style.display = 'none';
+            }
+        });
+        
+    } else {
+        console.error('locationInput element not found!');
+    }
     
     // Get current location
     getCurrentLocationBtn.addEventListener('click', function() {
@@ -102,40 +135,85 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Search locations using OpenStreetMap Nominatim API
     async function searchLocations(query) {
-        if (query.length < 3) {
-            locationSuggestions.style.display = 'none';
+        console.log('searchLocations called with query:', query);
+        
+        if (!query || query.length < 3) {
+            console.log('Query too short, hiding suggestions');
+            if (locationSuggestions) {
+                locationSuggestions.style.display = 'none';
+            }
             return;
         }
         
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=in`);
+            console.log('Making API request for:', query);
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=in`;
+            console.log('Request URL:', url);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'User-Agent': 'CropPredictionApp/1.0'
+                }
+            });
+            
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const locations = await response.json();
+            console.log('API response:', locations);
             
             displayLocationSuggestions(locations);
         } catch (error) {
             console.error('Error searching locations:', error);
+            // Show error to user
+            if (locationSuggestions) {
+                locationSuggestions.innerHTML = '<div class="location-suggestion" style="color: red;">Error loading locations. Please try again.</div>';
+                locationSuggestions.style.display = 'block';
+            }
         }
     }
     
     function displayLocationSuggestions(locations) {
-        locationSuggestions.innerHTML = '';
+        console.log('displayLocationSuggestions called with:', locations);
         
-        if (locations.length === 0) {
-            locationSuggestions.style.display = 'none';
+        if (!locationSuggestions) {
+            console.error('locationSuggestions element not found!');
             return;
         }
         
-        locations.forEach(location => {
+        locationSuggestions.innerHTML = '';
+        
+        if (!locations || locations.length === 0) {
+            console.log('No locations found, hiding suggestions');
+            locationSuggestions.innerHTML = '<div class="location-suggestion" style="color: #666;">No locations found</div>';
+            locationSuggestions.style.display = 'block';
+            setTimeout(() => {
+                locationSuggestions.style.display = 'none';
+            }, 2000);
+            return;
+        }
+        
+        console.log('Creating suggestions for', locations.length, 'locations');
+        locations.forEach((location, index) => {
+            console.log(`Creating suggestion ${index + 1}:`, location.display_name);
             const suggestion = document.createElement('div');
             suggestion.className = 'location-suggestion';
             suggestion.textContent = location.display_name;
+            suggestion.style.cursor = 'pointer';
             suggestion.addEventListener('click', () => {
+                console.log('Location selected:', location);
                 selectLocation(location);
             });
             locationSuggestions.appendChild(suggestion);
         });
         
         locationSuggestions.style.display = 'block';
+        console.log('Suggestions displayed, element style:', locationSuggestions.style.display);
+        console.log('Suggestions HTML:', locationSuggestions.innerHTML);
     }
     
     function selectLocation(location) {
