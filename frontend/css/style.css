@@ -381,6 +381,104 @@ body {
     opacity: 1;
 }
 
+/* Location Input Styling */
+.location-input-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#locationInput {
+    flex: 1;
+    padding: 15px 20px;
+    border: 2px solid #e8f5e8;
+    border-radius: 12px;
+    font-size: 1rem;
+    background: linear-gradient(145deg, #ffffff, #f8f9fa);
+    transition: all 0.3s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+#locationInput:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.location-btn {
+    padding: 15px 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.location-btn:hover {
+    background: #45a049;
+    transform: translateY(-1px);
+}
+
+.location-btn i {
+    margin-right: 5px;
+}
+
+.location-suggestions {
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #e8f5e8;
+    border-radius: 12px;
+    margin-top: 5px;
+    display: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.location-suggestion {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.location-suggestion:hover {
+    background-color: #f8fff8;
+}
+
+.location-suggestion:last-child {
+    border-bottom: none;
+}
+
+.weather-info {
+    margin-top: 10px;
+    padding: 15px;
+    background: linear-gradient(145deg, #f0f8f0, #e8f5e8);
+    border-radius: 12px;
+    border: 1px solid #4CAF50;
+}
+
+.weather-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #2d5016;
+    font-weight: 600;
+}
+
+#currentTemp {
+    font-size: 1.2rem;
+    color: #4CAF50;
+}
+
+#weatherCondition {
+    font-style: italic;
+    color: #666;
+}
+
 .form-buttons {
     display: flex;
     gap: 1rem;

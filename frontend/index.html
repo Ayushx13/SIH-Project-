@@ -75,44 +75,22 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="temperature">
-                            <i class="fas fa-thermometer-half"></i>Temperature Range
-                        </label>
-                        <div class="select-container">
-                            <select id="temperature" name="temperature" required>
-                                <option value="">Select temperature range...</option>
-                                <option value="cold"> Cold (0-15°C) - Cool climate crops</option>
-                                <option value="moderate"> Moderate (15-25°C) - Ideal growing conditions</option>
-                                <option value="warm"> Warm (25-35°C) - Heat-loving crops</option>
-                                <option value="hot"> Hot (35°C+) - Heat-resistant varieties</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
                         <label for="location">
-                            <i class="fas fa-map-marker-alt"></i>Location/State
+                            <i class="fas fa-map-marker-alt"></i>Location
                         </label>
-                        <div class="select-container">
-                            <select id="location" name="location" required>
-                                <option value="">Select your state...</option>
-                                <option value="andhra-pradesh"> Andhra Pradesh</option>
-                                <option value="assam"> Assam</option>
-                                <option value="bihar"> Bihar</option>
-                                <option value="gujarat"> Gujarat</option>
-                                <option value="haryana"> Haryana</option>
-                                <option value="karnataka"> Karnataka</option>
-                                <option value="kerala"> Kerala</option>
-                                <option value="madhya-pradesh"> Madhya Pradesh</option>
-                                <option value="maharashtra"> Maharashtra</option>
-                                <option value="odisha"> Odisha</option>
-                                <option value="punjab"> Punjab</option>
-                                <option value="rajasthan"> Rajasthan</option>
-                                <option value="tamil-nadu"> Tamil Nadu</option>
-                                <option value="uttar-pradesh"> Uttar Pradesh</option>
-                                <option value="west-bengal"> West Bengal</option>
-                                <option value="other"> Other</option>
-                            </select>
+                        <div class="location-input-container">
+                            <input type="text" id="locationInput" name="location" placeholder="Enter your city or location..." required>
+                            <button type="button" id="getCurrentLocation" class="location-btn">
+                                <i class="fas fa-crosshairs"></i>
+                                Use Current Location
+                            </button>
+                        </div>
+                        <div id="locationSuggestions" class="location-suggestions"></div>
+                        <div id="weatherInfo" class="weather-info" style="display: none;">
+                            <div class="weather-details">
+                                <span id="currentTemp"></span>
+                                <span id="weatherCondition"></span>
+                            </div>
                         </div>
                     </div>
                     

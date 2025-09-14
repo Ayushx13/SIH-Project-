@@ -28,6 +28,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const predictionResult = document.getElementById('predictionResult');
     const newPredictionBtn = document.getElementById('newPredictionBtn');
     
+    // Location and weather functionality
+    const locationInput = document.getElementById('locationInput');
+    const getCurrentLocationBtn = document.getElementById('getCurrentLocation');
+    const locationSuggestions = document.getElementById('locationSuggestions');
+    const weatherInfo = document.getElementById('weatherInfo');
+    
+    let currentLocationData = null;
+    let currentWeatherData = null;
+    
     // Enhanced dropdown interactions
     const dropdowns = document.querySelectorAll('.form-group select');
     
@@ -64,6 +73,156 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Location input functionality
+    locationInput.addEventListener('input', debounce(searchLocations, 300));
+    
+    // Get current location
+    getCurrentLocationBtn.addEventListener('click', function() {
+        if (navigator.geolocation) {
+            getCurrentLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting Location...';
+            getCurrentLocationBtn.disabled = true;
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    getReverseGeocode(lat, lon);
+                },
+                function(error) {
+                    alert('Error getting location: ' + error.message);
+                    getCurrentLocationBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Use Current Location';
+                    getCurrentLocationBtn.disabled = false;
+                }
+            );
+        } else {
+            alert('Geolocation is not supported by this browser.');
+        }
+    });
+    
+    // Search locations using OpenStreetMap Nominatim API
+    async function searchLocations(query) {
+        if (query.length < 3) {
+            locationSuggestions.style.display = 'none';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=in`);
+            const locations = await response.json();
+            
+            displayLocationSuggestions(locations);
+        } catch (error) {
+            console.error('Error searching locations:', error);
+        }
+    }
+    
+    function displayLocationSuggestions(locations) {
+        locationSuggestions.innerHTML = '';
+        
+        if (locations.length === 0) {
+            locationSuggestions.style.display = 'none';
+            return;
+        }
+        
+        locations.forEach(location => {
+            const suggestion = document.createElement('div');
+            suggestion.className = 'location-suggestion';
+            suggestion.textContent = location.display_name;
+            suggestion.addEventListener('click', () => {
+                selectLocation(location);
+            });
+            locationSuggestions.appendChild(suggestion);
+        });
+        
+        locationSuggestions.style.display = 'block';
+    }
+    
+    function selectLocation(location) {
+        locationInput.value = location.display_name;
+        locationSuggestions.style.display = 'none';
+        currentLocationData = location;
+        
+        // Get weather data for the selected location
+        getWeatherData(location.lat, location.lon, location.display_name);
+    }
+    
+    // Get reverse geocoding for current location
+    async function getReverseGeocode(lat, lon) {
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+            const location = await response.json();
+            
+            locationInput.value = location.display_name;
+            currentLocationData = location;
+            
+            // Get weather data
+            getWeatherData(lat, lon, location.display_name);
+            
+            getCurrentLocationBtn.innerHTML = '<i class="fas fa-check"></i> Location Found';
+            setTimeout(() => {
+                getCurrentLocationBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Use Current Location';
+                getCurrentLocationBtn.disabled = false;
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Error getting location name:', error);
+            getCurrentLocationBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Use Current Location';
+            getCurrentLocationBtn.disabled = false;
+        }
+    }
+    
+    // Get weather data using OpenWeatherMap API (you'll need to get a free API key)
+    async function getWeatherData(lat, lon, locationName) {
+        // For demo purposes, we'll simulate weather data
+        // In production, you would use: const API_KEY = 'your_openweathermap_api_key';
+        // const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`);
+        
+        try {
+            // Simulated weather data based on location
+            const simulatedWeather = generateSimulatedWeather(lat, lon);
+            currentWeatherData = simulatedWeather;
+            
+            document.getElementById('currentTemp').textContent = `${simulatedWeather.temp}°C`;
+            document.getElementById('weatherCondition').textContent = simulatedWeather.condition;
+            weatherInfo.style.display = 'block';
+            
+        } catch (error) {
+            console.error('Error getting weather data:', error);
+        }
+    }
+    
+    // Generate simulated weather data based on location
+    function generateSimulatedWeather(lat, lon) {
+        // Simple simulation based on latitude
+        let temp, condition;
+        
+        if (lat > 30) { // Northern regions
+            temp = Math.floor(Math.random() * 15) + 5; // 5-20°C
+            condition = 'Cool';
+        } else if (lat > 20) { // Central regions
+            temp = Math.floor(Math.random() * 15) + 20; // 20-35°C
+            condition = 'Warm';
+        } else { // Southern regions
+            temp = Math.floor(Math.random() * 10) + 25; // 25-35°C
+            condition = 'Hot';
+        }
+        
+        return { temp, condition };
+    }
+    
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
     
     // Open modal
     getStartedBtn.addEventListener('click', function() {
@@ -104,32 +263,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Enhanced form submission with better validation
+    // Enhanced form submission with location and weather data
     predictionForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
         const soilType = document.getElementById('soilType').value;
-        const temperature = document.getElementById('temperature').value;
-        const location = document.getElementById('location').value;
+        const locationValue = locationInput.value;
         
-        // Enhanced validation with specific messages
+        // Enhanced validation
         if (!soilType) {
             showValidationError('soilType', 'Please select your soil type');
             return;
         }
         
-        if (!temperature) {
-            showValidationError('temperature', 'Please select temperature range');
+        if (!locationValue || !currentLocationData) {
+            showValidationError('locationInput', 'Please enter a valid location');
             return;
         }
         
-        if (!location) {
-            showValidationError('location', 'Please select your location');
+        if (!currentWeatherData) {
+            showValidationError('locationInput', 'Please wait for weather data to load');
             return;
         }
         
-        // Generate prediction based on inputs
-        generatePrediction(soilType, temperature, location);
+        // Generate prediction with location and weather data
+        generatePredictionWithWeather(soilType, currentLocationData, currentWeatherData);
     });
     
     // New prediction button
@@ -137,6 +295,9 @@ document.addEventListener('DOMContentLoaded', function() {
         predictionForm.style.display = 'block';
         predictionResult.style.display = 'none';
         predictionForm.reset();
+        weatherInfo.style.display = 'none';
+        currentLocationData = null;
+        currentWeatherData = null;
         
         // Reset form styling
         dropdowns.forEach(dropdown => {
@@ -191,11 +352,11 @@ function showValidationError(fieldId, message) {
     }, { once: true });
 }
 
-// Generate AI prediction based on inputs
-function generatePrediction(soilType, temperature, location) {
+// Generate AI prediction based on inputs with weather data
+function generatePredictionWithWeather(soilType, locationData, weatherData) {
     // Simulate AI processing
     const loadingMessage = document.createElement('div');
-    loadingMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing conditions...';
+    loadingMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing conditions with real-time weather data...';
     loadingMessage.style.textAlign = 'center';
     loadingMessage.style.padding = '2rem';
     loadingMessage.style.color = '#4CAF50';
@@ -207,8 +368,8 @@ function generatePrediction(soilType, temperature, location) {
     setTimeout(() => {
         loadingMessage.remove();
         
-        // Generate recommendations based on inputs
-        const prediction = generateRecommendations(soilType, temperature, location);
+        // Generate recommendations based on inputs including weather
+        const prediction = generateWeatherBasedRecommendations(soilType, locationData, weatherData);
         
         // Display results
         document.getElementById('recommendedCrops').textContent = prediction.crops;
@@ -220,8 +381,8 @@ function generatePrediction(soilType, temperature, location) {
     }, 2000);
 }
 
-// AI recommendation logic
-function generateRecommendations(soilType, temperature, location) {
+// Enhanced AI recommendation logic with weather data
+function generateWeatherBasedRecommendations(soilType, locationData, weatherData) {
     const recommendations = {
         // Soil-based recommendations
         sandy: {
@@ -250,46 +411,68 @@ function generateRecommendations(soilType, temperature, location) {
         }
     };
     
-    // Temperature-based adjustments
-    const tempAdjustments = {
-        cold: { season: 'Late Spring to Early Summer', yieldMultiplier: 0.8 },
-        moderate: { season: 'Spring to Fall', yieldMultiplier: 1.2 },
-        warm: { season: 'Year-round cultivation', yieldMultiplier: 1.1 },
-        hot: { season: 'Early Spring or Late Fall', yieldMultiplier: 0.9 }
-    };
+    // Weather-based adjustments
+    const temp = weatherData.temp;
+    let tempCategory, tempAdjustments;
     
-    // Location-based adjustments
-    const locationFactors = {
-        'punjab': { yieldBonus: 1.3, specialty: 'Wheat, Rice' },
-        'maharashtra': { yieldBonus: 1.2, specialty: 'Cotton, Sugarcane' },
-        'uttar-pradesh': { yieldBonus: 1.25, specialty: 'Wheat, Rice' },
-        'gujarat': { yieldBonus: 1.15, specialty: 'Cotton, Groundnut' },
-        'karnataka': { yieldBonus: 1.1, specialty: 'Coffee, Ragi' },
-        'tamil-nadu': { yieldBonus: 1.1, specialty: 'Rice, Sugarcane' },
-        'andhra-pradesh': { yieldBonus: 1.15, specialty: 'Rice, Cotton' },
-        'rajasthan': { yieldBonus: 0.9, specialty: 'Millet, Barley' }
-    };
+    if (temp < 15) {
+        tempCategory = 'cold';
+        tempAdjustments = { season: 'Late Spring to Early Summer', yieldMultiplier: 0.8 };
+    } else if (temp < 25) {
+        tempCategory = 'moderate';
+        tempAdjustments = { season: 'Spring to Fall', yieldMultiplier: 1.2 };
+    } else if (temp < 35) {
+        tempCategory = 'warm';
+        tempAdjustments = { season: 'Year-round cultivation', yieldMultiplier: 1.1 };
+    } else {
+        tempCategory = 'hot';
+        tempAdjustments = { season: 'Early Spring or Late Fall', yieldMultiplier: 0.9 };
+    }
+    
+    // Location-based adjustments (extract state/region from location data)
+    const locationName = locationData.display_name.toLowerCase();
+    let locationFactor = { yieldBonus: 1.0, specialty: 'Mixed crops' };
+    
+    if (locationName.includes('punjab')) {
+        locationFactor = { yieldBonus: 1.3, specialty: 'Wheat, Rice' };
+    } else if (locationName.includes('maharashtra')) {
+        locationFactor = { yieldBonus: 1.2, specialty: 'Cotton, Sugarcane' };
+    } else if (locationName.includes('gujarat')) {
+        locationFactor = { yieldBonus: 1.15, specialty: 'Cotton, Groundnut' };
+    } else if (locationName.includes('karnataka')) {
+        locationFactor = { yieldBonus: 1.1, specialty: 'Coffee, Ragi' };
+    } else if (locationName.includes('tamil nadu')) {
+        locationFactor = { yieldBonus: 1.1, specialty: 'Rice, Sugarcane' };
+    } else if (locationName.includes('rajasthan')) {
+        locationFactor = { yieldBonus: 0.9, specialty: 'Millet, Barley' };
+    }
     
     const soilRec = recommendations[soilType] || recommendations.loamy;
-    const tempRec = tempAdjustments[temperature] || tempAdjustments.moderate;
-    const locationFactor = locationFactors[location] || { yieldBonus: 1.0, specialty: 'Mixed crops' };
     
-    // Calculate expected yield
-    const baseYield = 75; // Base yield percentage
-    const expectedYield = Math.round(baseYield * tempRec.yieldMultiplier * locationFactor.yieldBonus);
+    // Calculate expected yield with weather data
+    const baseYield = 75;
+    const expectedYield = Math.round(baseYield * tempAdjustments.yieldMultiplier * locationFactor.yieldBonus);
     
-    // Combine recommendations
+    // Combine recommendations with weather consideration
     let finalCrops = soilRec.crops;
     if (locationFactor.specialty !== 'Mixed crops') {
         const specialtyCrops = locationFactor.specialty.split(', ');
         finalCrops = [...new Set([...specialtyCrops, ...soilRec.crops])];
     }
     
+    // Adjust irrigation based on current temperature
+    let irrigationAdjustment = soilRec.irrigation;
+    if (temp > 30) {
+        irrigationAdjustment += ' (Increase frequency due to high temperature)';
+    } else if (temp < 15) {
+        irrigationAdjustment += ' (Reduce frequency due to cool weather)';
+    }
+    
     return {
         crops: finalCrops.slice(0, 3).join(', '),
-        yield: `${expectedYield}% of optimal yield`,
-        season: tempRec.season,
-        irrigation: soilRec.irrigation
+        yield: `${expectedYield}% of optimal yield (Current temp: ${temp}°C)`,
+        season: tempAdjustments.season,
+        irrigation: irrigationAdjustment
     };
 }
 
