@@ -1868,13 +1868,12 @@ function generateAIPredictionFromAutoData(data) {
     loadingMessage.innerHTML = `
         <div style="text-align: center; padding: 2rem;">
             <i class="fas fa-brain fa-3x" style="color: #4CAF50; margin-bottom: 1rem; animation: pulse 2s infinite;"></i>
-            <h3>AI Analysis in Progress</h3>
+            <h3>Getting suggestion</h3>
             <p>Processing <strong>real-time data</strong> from multiple APIs and sources</p>
             <div class="processing-steps">
                 <div class="step"><span class="step-icon">🌱</span> Analyzing real soil data from ISRIC SoilGrids...</div>
                 <div class="step"><span class="step-icon">🌤️</span> Processing live weather from Open-Meteo API...</div>
                 <div class="step"><span class="step-icon">📊</span> Integrating NASA POWER agricultural data...</div>
-                <div class="step"><span class="step-icon">🧠</span> Generating AI-powered predictions...</div>
             </div>
             <div class="loading-bar" style="width: 250px; height: 6px; background: #e0e0e0; border-radius: 3px; margin: 1.5rem auto; overflow: hidden;">
                 <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); border-radius: 3px; animation: loadingProgress 4s ease-in-out;"></div>
