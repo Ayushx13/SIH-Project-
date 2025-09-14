@@ -57,45 +57,83 @@
                     <span class="close-btn" id="closeModal">&times;</span>
                 </div>
                 <form id="predictionForm" class="prediction-form">
-                    <div class="form-group">
-                        <label for="soilType">
-                            <i class="fas fa-mountain"></i>Soil Type
-                        </label>
-                        <div class="select-container">
-                            <select id="soilType" name="soilType" required>
-                                <option value="">Select your soil type...</option>
-                                <option value="sandy"> Sandy Soil - Well-draining, loose texture</option>
-                                <option value="clay"> Clay Soil - Dense, nutrient-rich</option>
-                                <option value="loamy"> Loamy Soil - Balanced, fertile</option>
-                                <option value="silt"> Silt Soil - Fine particles, moisture-retaining</option>
-                                <option value="peaty"> Peaty Soil - Organic, acidic</option>
-                                <option value="chalky"> Chalky Soil - Alkaline, free-draining</option>
+                    <!-- Location Input Only -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-map-marker-alt"></i> Location Input</h3>
+                        <p class="form-description">Enter your location and we'll automatically fetch all agricultural data including soil conditions, climate, and regional farming information.</p>
+                        
+                        <div class="form-group">
+                            <label for="location">
+                                <i class="fas fa-map-marker-alt"></i>Your Farm Location
+                                <span id="locationStatus" class="location-status"></span>
+                            </label>
+                            <div class="location-input-container">
+                                <input type="text" id="locationInput" name="location" placeholder="Enter your city, village, or coordinates..." required>
+                                <button type="button" id="getCurrentLocation" class="location-btn">
+                                    <i class="fas fa-crosshairs"></i>
+                                    Use Current Location
+                                </button>
+                            </div>
+                            <div id="locationSuggestions" class="location-suggestions"></div>
+                            <small>We'll automatically detect soil type, climate conditions, and regional farming data</small>
+                        </div>
+                        
+                        <!-- Auto-fetched data display -->
+                        <div id="fetchedData" class="fetched-data" style="display: none;">
+                            <h4><i class="fas fa-database"></i> Auto-Detected Agricultural Data</h4>
+                            <div id="dataDisplay" class="data-grid">
+                                <!-- Data will be populated automatically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Optional Target Crop Selection -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-seedling"></i> Crop Selection (Optional)</h3>
+                        <p class="form-description">Select a specific crop for prediction, or leave blank for general recommendations.</p>
+                        
+                        <div class="form-group">
+                            <label for="targetCrop">Target Crop (Optional)</label>
+                            <select id="targetCrop" name="targetCrop">
+                                <option value="">Auto-recommend best crops for your area</option>
+                                <optgroup label="Cereals">
+                                    <option value="rice">Rice</option>
+                                    <option value="wheat">Wheat</option>
+                                    <option value="maize">Maize</option>
+                                    <option value="barley">Barley</option>
+                                    <option value="millet">Millet</option>
+                                </optgroup>
+                                <optgroup label="Pulses">
+                                    <option value="chickpea">Chickpea</option>
+                                    <option value="lentil">Lentil</option>
+                                    <option value="pigeon_pea">Pigeon Pea</option>
+                                    <option value="black_gram">Black Gram</option>
+                                </optgroup>
+                                <optgroup label="Cash Crops">
+                                    <option value="cotton">Cotton</option>
+                                    <option value="sugarcane">Sugarcane</option>
+                                    <option value="tobacco">Tobacco</option>
+                                </optgroup>
+                                <optgroup label="Oilseeds">
+                                    <option value="groundnut">Groundnut</option>
+                                    <option value="mustard">Mustard</option>
+                                    <option value="sunflower">Sunflower</option>
+                                    <option value="soybean">Soybean</option>
+                                </optgroup>
+                                <optgroup label="Vegetables">
+                                    <option value="tomato">Tomato</option>
+                                    <option value="potato">Potato</option>
+                                    <option value="onion">Onion</option>
+                                    <option value="cabbage">Cabbage</option>
+                                </optgroup>
                             </select>
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="location">
-                            <i class="fas fa-map-marker-alt"></i>Location
-                        </label>
-                        <div class="location-input-container">
-                            <input type="text" id="locationInput" name="location" placeholder="Enter your city or location..." required>
-                            <button type="button" id="getCurrentLocation" class="location-btn">
-                                <i class="fas fa-crosshairs"></i>
-                                Use Current Location
-                            </button>
-                        </div>
-                        <div id="locationSuggestions" class="location-suggestions"></div>
-                        <div id="weatherInfo" class="weather-info" style="display: none;">
-                            <div class="weather-details">
-                                <span id="currentTemp"></span>
-                                <span id="weatherCondition"></span>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <div class="form-buttons">
-                        <button type="submit" class="btn btn-primary">Get Prediction</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-brain"></i> Get Suggestions
+                        </button>
                         <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
                     </div>
                 </form>
@@ -125,20 +163,6 @@
                     </div>
                     <button class="btn btn-primary" id="newPredictionBtn">New Prediction</button>
                 </div>
-            </div>
-        </div>
-        <div class="hero-stats">
-            <div class="stat">
-                <h3>10%+</h3>
-                <p>Productivity Increase</p>
-            </div>
-            <div class="stat">
-                <h3>1000+</h3>
-                <p>Farmers Helped</p>
-            </div>
-            <div class="stat">
-                <h3>50+</h3>
-                <p>Crop Types Supported</p>
             </div>
         </div>
     </section>
